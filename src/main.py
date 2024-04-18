@@ -1,26 +1,54 @@
 import os
 import sys
 
-root = os.getcwd()
-sys.path.insert(0, root)
+class Item:
+    def __init__(self, name, weight, value):
+        self.name = name
+        self.weight = weight
+        self.value = value
 
-datasetsPath = os.path.join(root,"datasets")
+def main():
+    root = os.getcwd()
+    sys.path.insert(0, root)
 
-datasets = os.listdir(datasetsPath)
+    datasetsPath = os.path.join(root,"datasets")
 
-print("Instâncias disponíveis:")
-for index, file in enumerate(datasets):
-    print(f"{index} - {file}")
+    datasets = os.listdir(datasetsPath)
 
-selectedInstance = int(input("Escolha uma instância: "))
+    print("Instâncias disponíveis:")
+    for index, file in enumerate(datasets):
+        print(f"{index} - {file}")
 
-selectedDataset = datasets[selectedInstance]
+    selectedInstance = int(input("Escolha uma instância: "))
 
-with open(os.path.join(datasetsPath, selectedDataset)) as file:
-    content = file.read()
+    selectedDataset = datasets[selectedInstance]
 
-print(content)
+    capacity = None
+    amountItems = None
+    items = []
 
-from algorithms.genetic import function
+    with open(os.path.join(datasetsPath, selectedDataset)) as file:
+        for index, line in enumerate(file):
+            line = line.strip()
 
-function()
+            if index == 0:
+                capacity = line
+            elif index == 1:
+                amountItems = line
+            else:
+                values = line.split(",")
+                items.append(Item(values[0],values[1],values[2]))
+
+    print("Capacidade:", capacity)
+    print("Quantidade de Itens:", amountItems)
+
+    for item in items:
+        print(item.name, item.weight, item.value)
+
+    """ from algorithms.genetic import function
+
+    function() """
+
+
+if __name__ == "__main__":
+    main()
