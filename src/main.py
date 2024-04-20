@@ -19,9 +19,9 @@ def main():
     for index, file in enumerate(datasets):
         print(f"{index} - {file}")
 
-    selectedInstance = int(input("Escolha uma instância: "))
+    #selectedInstance = int(input("Escolha uma instância: "))
 
-    selectedDataset = datasets[selectedInstance]
+    selectedDataset = datasets[5]
 
     capacity = None
     amountItems = None
@@ -32,23 +32,36 @@ def main():
             line = line.strip()
 
             if index == 0:
-                capacity = line
+                capacity = int(line)
             elif index == 1:
-                amountItems = line
+                amountItems = int(line)
             else:
                 values = line.split(",")
-                items.append(Item(values[0],values[1],values[2]))
+                items.append(Item(values[0],int(values[1]),int(values[2])))
 
     print("Capacidade:", capacity)
     print("Quantidade de Itens:", amountItems)
 
-    for item in items:
-        print(item.name, item.weight, item.value)
+    """ for item in items:
+        print(item.name, item.weight, item.value) """
 
-    """ from algorithms.genetic import function
+    from algorithms.simulated_annealing import simulated_annealing_knapsack
 
-    function() """
+    initial_temperature = 1000.0
+    cooling_rate = 0.95
+    num_iterations = 10000
 
+    best_solution = simulated_annealing_knapsack(items, capacity, initial_temperature, cooling_rate, num_iterations)
+    #best_solution, best_energy, execution_time = simulated_annealing(items, capacity, initial_temperature, cooling_rate, num_iterations)
+    
+    print("Melhor solução:", best_solution)
+    #print("Soma de valores:", best_energy)
+    #print("Tempo de execução:", execution_time, "segundos")
+
+    print("Itens selecionados:")
+    for i, item in enumerate(items):
+        if best_solution[i] == 1:
+            print(f"Item {item.name}: Peso = {item.weight}, Valor = {item.value}")
 
 if __name__ == "__main__":
     main()
