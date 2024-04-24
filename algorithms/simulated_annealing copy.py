@@ -50,7 +50,7 @@ def main():
         Item(11, 330),
         Item(9, 331)
     ]
-    capacity = 10
+    capacity = 15
 
     # Parâmetros do Simulated Annealing
     initial_temperature = 1000
@@ -75,9 +75,22 @@ def simulated_annealing_knapsack(items, capacity, initial_temperature, cooling_r
 
     for _ in range(num_iterations):
         new_solution = generate_neighbor(current_solution)
+        #print(new_solution)
         new_cost = cost_function(new_solution, items, capacity)
 
-        if new_cost > current_cost or random.random() < math.exp((current_cost - new_cost) / temperature):
+        #print(current_cost)
+        #print(new_cost)
+        #print(temperature)
+
+        """         max_value = max(abs(current_cost - new_cost), abs(temperature))
+        numerador -= max_value
+        result
+        denominador -= max_value """
+
+        if(temperature < 1):
+            temperature = 1
+        
+        if new_cost > current_cost or random.random() < math.exp((current_cost - new_cost) / round(temperature, 2)):
             current_solution = new_solution[:]
             current_cost = new_cost
 
@@ -101,17 +114,17 @@ def cost_function(solution, items, capacity):
             total_weight += items[i].weight
     # Penalize soluções que excedam a capacidade da mochila
     # Implemente o método de penalização que achar mais adequado
+    print(total_weight)
     if total_weight > capacity:
         total_value = 0
     return total_value
 
 def generate_neighbor(solution):
-    neighbor_solution = solution[:]
-    index_random = random.randint(0, len(solution) -1)
-    neighbor_solution[index_random] = int(not neighbor_solution[index_random])
-    print("s ", solution)
-    print("ns",neighbor_solution)
-    return neighbor_solution
+    #se o custo for maior eu posso remover, menor add (validar o que tenho para gerar um novo vizinho)
+    vizinho = solution[:]
+    idx = random.randint(0, len(vizinho)-1) # Escolhe aleatoriamente um item para alterar
+    vizinho[idx] = int(not vizinho[idx])
+    return vizinho
 
 if __name__ == "__main__":
     main()

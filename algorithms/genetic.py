@@ -1,6 +1,3 @@
-import os
-import sys
-import math
 import random
 
 class Item:
@@ -8,118 +5,102 @@ class Item:
         self.weight = weight
         self.value = value
 
-items = [
-    Item(7, 369),
-    Item(10, 346),
-    Item(11, 322),
-    Item(10, 347),
-    Item(12, 348),
-    Item(13, 383),
-    Item(8, 347),
-    Item(11, 364),
-    Item(8, 340),
-    Item(8, 324),
-    Item(13, 365),
-    Item(12, 314),
-    Item(13, 306),
-    Item(13, 394),
-    Item(7, 326),
-    Item(11, 310),
-    Item(9, 400),
-    Item(13, 339),
-    Item(5, 381),
-    Item(14, 353),
-    Item(6, 383),
-    Item(9, 317),
-    Item(6, 349),
-    Item(11, 396),
-    Item(14, 353),
-    Item(9, 322),
-    Item(5, 329),
-    Item(5, 386),
-    Item(5, 382),
-    Item(4, 369),
-    Item(6, 304),
-    Item(10, 392),
-    Item(8, 390),
-    Item(8, 307),
-    Item(10, 318),
-    Item(13, 359),
-    Item(9, 378),
-    Item(8, 376),
-    Item(11, 330),
-    Item(9, 331)
-]
+def main():
+    # Exemplo de itens e capacidade da mochila
+    items = [
+        Item(2, 10),
+        Item(3, 7),
+        Item(4, 14),
+        Item(5, 5),
+        Item(6, 3)
+    ]
+    capacity = 10
 
-def knapsack_simulated_annealing(items, capacity, initial_temperature, cooling_rate, stopping_temperature, iterations):
-    def calculate_value(combination):
+    # Parâmetros do algoritmo genético
+    population_size = 50
+    crossover_rate = 0.8
+    mutation_rate = 0.1
+    num_generations = 500
+
+    # Chamada para a função que implementa o algoritmo genético
+    solution = genetic_algorithm(items, capacity, population_size, crossover_rate, mutation_rate, num_generations)
+
+    # Imprimir a solução encontrada
+    print("Itens selecionados:")
+    for i, item in enumerate(items):
+        if solution[i] == 1:
+            print(f"Item {i+1}: Peso = {item.weight}, Valor = {item.value}")
+
+# Função para implementar o algoritmo genético para o Problema da Mochila
+def genetic_algorithm(items, capacity, population_size, crossover_rate, mutation_rate, num_generations):
+    population = generate_initial_population(len(items), population_size)
+
+    for gen in range(num_generations):
+        next_generation = []
+        for _ in range(population_size):
+            parent1 = tournament_selection(population, items, capacity)
+            parent2 = roulette_selection(population, items, capacity)
+            offspring = crossover(parent1, parent2, crossover_rate)
+            mutate(offspring, mutation_rate)
+            next_generation.append(offspring)
+        population = next_generation
+
+    # Encontrar a melhor solução na última geração
+    best_solution = max(population, key=lambda x: fitness_function(x, items, capacity))
+    return best_solution
+
+# Função para gerar uma população inicial aleatória
+def generate_initial_population(size, population_size):
+    population = []
+    for _ in range(population_size):
+        individual = [random.randint(0, 1) for _ in range(size)]  # 0 ou 1 (selecionado ou não selecionado)
+        population.append(individual)
+    return population
+
+# Função de fitness para calcular o valor total da mochila
+def fitness_function(solution, items, capacity):
+    total_value = sum(item.value for item, selected in zip(items, solution) if selected == 1)
+    total_weight = sum(item.weight for item, selected in zip(items, solution) if selected == 1)
+    # Penalize soluções que excedam a capacidade da mochila
+    if total_weight > capacity:
         total_value = 0
-        total_weight = 0
-        for i in range(len(combination)):
-            if combination[i] == 1:
-                total_value += items[i].value
-                total_weight += items[i].weight
-        return total_value, total_weight
-    
-    current_solution = [0] * len(items)
-    current_weight = 0
-    current_value = 0
-    
-    for i in range(len(items)):
-        if random.random() < 0.5:
-            current_solution[i] = 1
-            current_weight += items[i].weight
-            current_value += items[i].value
-    
-    best_solution = current_solution[:]
-    best_value = current_value
-    
-    temperature = initial_temperature
-    
-    while temperature > stopping_temperature:
-        for _ in range(iterations):
-            index_to_change = random.randint(0, len(items) - 1)
-            new_solution = current_solution[:]
-            new_solution[index_to_change] = 1 - new_solution[index_to_change]
-            new_value, new_weight = calculate_value(new_solution)
-            
-            if new_weight <= capacity:
-                if new_value > current_value:
-                    current_solution = new_solution
-                    current_value = new_value
-                    current_weight = new_weight
+    return total_value
 
-                    if current_value > best_value:
-                        best_solution = current_solution[:]
-                        best_value = current_value
-                else:
-                    probability = math.exp((new_value - current_value) / temperature)
-                    if random.random() < probability:
-                        current_solution = new_solution
-                        current_value = new_value
-                        current_weight = new_weight
-            else:
-                # Penalizar soluções que excedam o peso da mochila suavemente
-                current_value *= 0.95  # Reduzir o valor total em 5%
-        
-        temperature *= cooling_rate
-    
-    return best_solution, best_value
+# Função para realizar a seleção por torneio
+def tournament_selection(population, items, capacity):
+    tournament_size = 5  # Tamanho do torneio
+    tournament = random.sample(population, tournament_size)
+    best_solution = max(tournament, key=lambda x: fitness_function(x, items, capacity))
+    return best_solution
 
-# Capacidade máxima da mochila
-capacity = 15
+# Função para realizar a seleção por roleta
+def roulette_selection(population, items, capacity):
+    total_fitness = sum(fitness_function(individual, items, capacity) for individual in population)
+    random_fitness = random.uniform(0, total_fitness)
+    cumulative_fitness = 0
+    for individual in population:
+        cumulative_fitness += fitness_function(individual, items, capacity)
+        if cumulative_fitness >= random_fitness:
+            return individual
 
-# Parâmetros do Simulated Annealing
-initial_temperature = 1000
-cooling_rate = 0.99
-stopping_temperature = 0.1
-iterations = 1000
+# Função para realizar o cruzamento (crossover)
+def crossover(parent1, parent2, crossover_rate):
+    if parent1 == parent2:
+        return parent1, parent2
+    if random.random() < crossover_rate:
+        crossover_point = random.randint(1, len(parent1) - 1)
+        child1 = parent1[:crossover_point] + parent2[crossover_point:]
+        child2 = parent2[:crossover_point] + parent1[crossover_point:]
+        return child1, child2
 
-# Encontrar a melhor combinação de itens usando Simulated Annealing
-best_solution, best_value = knapsack_simulated_annealing(items, capacity, initial_temperature, cooling_rate, stopping_temperature, iterations)
+# Função para realizar a mutação
+def mutate(solution, mutation_rate):
+    print(solution)
+    if random.random() < mutation_rate:
+        solution_mutate = solution[:]
+        index_random = random.randint(0, len(solution) -1)
+        solution_mutate[index_random] = int(not solution_mutate[index_random])
+        return solution_mutate
 
-# Imprimir a melhor combinação
-print("Melhor combinação de itens:")
-for i, item in enumerate(best_solution):
-    print("Item", i+1, "- Peso:", items[i].weight, "Valor:", items[i].value)
-print("Valor total:", best_value)
+if __name__ == "__main__":
+    main()
