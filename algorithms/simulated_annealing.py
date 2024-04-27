@@ -1,117 +1,62 @@
 import random
 import math
 
-class Item:
-    def __init__(self, weight, value):
-        self.weight = weight
-        self.value = value
-
-def main():
-    # Exemplo de itens e capacidade da mochila
-    items = [
-        Item(7, 369),
-        Item(10, 346),
-        Item(11, 322),
-        Item(10, 347),
-        Item(12, 348),
-        Item(13, 383),
-        Item(8, 347),
-        Item(11, 364),
-        Item(8, 340),
-        Item(8, 324),
-        Item(13, 365),
-        Item(12, 314),
-        Item(13, 306),
-        Item(13, 394),
-        Item(7, 326),
-        Item(11, 310),
-        Item(9, 400),
-        Item(13, 339),
-        Item(5, 381),
-        Item(14, 353),
-        Item(6, 383),
-        Item(9, 317),
-        Item(6, 349),
-        Item(11, 396),
-        Item(14, 353),
-        Item(9, 322),
-        Item(5, 329),
-        Item(5, 386),
-        Item(5, 382),
-        Item(4, 369),
-        Item(6, 304),
-        Item(10, 392),
-        Item(8, 390),
-        Item(8, 307),
-        Item(10, 318),
-        Item(13, 359),
-        Item(9, 378),
-        Item(8, 376),
-        Item(11, 330),
-        Item(9, 331)
-    ]
-    capacity = 10
-
-    # Parâmetros do Simulated Annealing
-    initial_temperature = 1000
-    cooling_rate = 0.95
-    num_iterations = 1000
-
-    # Chamada para a função que implementa o Simulated Annealing
-    solution = simulated_annealing_knapsack(items, capacity, initial_temperature, cooling_rate, num_iterations)
-
-    # Imprimir a solução encontrada
-    print("Itens selecionados:")
-    for i, item in enumerate(items):
-        if solution[i] == 1:
-            print(f"Item {i+1}: Peso = {item.weight}, Valor = {item.value}")
-
-def simulated_annealing_knapsack(items, capacity, initial_temperature, cooling_rate, num_iterations):
-    current_solution = generate_random_solution(len(items))
+# Definição da função Simulated Annealing
+def simulated_annealing(items, capacity, initial_temperature, cooling_rate, num_iterations):
+    current_solution = [0] * len(items)
     best_solution = current_solution[:]
-    current_cost = cost_function(current_solution, items, capacity)
+    current_cost = 0
     best_cost = current_cost
-    temperature = initial_temperature
 
+    # Soma o total dos valores dos items da solução
+    def get_total_value(solution):
+        total_value = 0
+        for i in range(len(solution)):
+            if solution[i] == 1:
+                total_value += items[i].value
+        return total_value
+
+    # Soma o total dos pesos dos items da solução
+    def get_total_weight(solution):
+        total_weight = 0
+        for i in range(len(solution)):
+            if solution[i] == 1:
+                total_weight += items[i].weight
+        return total_weight
+
+    # Analisa o delta e retorna a divisão pela temperatura ou 1
+    def acceptance_probability(delta, temperature):
+        if delta > 0:
+            return math.exp(-delta / temperature)
+        else:
+            return 1
+        
+    # Loop com o número de interações
     for _ in range(num_iterations):
-        new_solution = generate_neighbor(current_solution)
-        new_cost = cost_function(new_solution, items, capacity)
+        temperature = initial_temperature
+        while temperature >= 0.2:
+            neighbor_solution = generate_neighbor(current_solution)
+            neighbor_weight = get_total_weight(neighbor_solution)
+            
+            if neighbor_weight <= capacity:
+                neighbor_value = get_total_value(neighbor_solution)
+                delta = neighbor_value - current_cost
 
-        if new_cost > current_cost or random.random() < math.exp((current_cost - new_cost) / temperature):
-            current_solution = new_solution[:]
-            current_cost = new_cost
+                if delta > 0 or random.random() < acceptance_probability(delta, temperature):
+                    current_solution = neighbor_solution
+                    current_cost = neighbor_value
 
-        if current_cost > best_cost:
-            best_solution = current_solution[:]
-            best_cost = current_cost
+                    if current_cost > best_cost:
+                        best_solution = current_solution
+                        best_cost = current_cost
 
-        temperature *= cooling_rate
+            temperature *= cooling_rate
 
     return best_solution
 
-def generate_random_solution(size):
-    return [random.randint(0, 1) for _ in range(size)]
-
-def cost_function(solution, items, capacity):
-    total_value = 0
-    total_weight = 0
-    for i, selected in enumerate(solution):
-        if selected == 1:
-            total_value += items[i].value
-            total_weight += items[i].weight
-    # Penalize soluções que excedam a capacidade da mochila
-    # Implemente o método de penalização que achar mais adequado
-    if total_weight > capacity:
-        total_value = 0
-    return total_value
-
+# Geração de uma solução vizinha a solução
 def generate_neighbor(solution):
-    neighbor_solution = solution[:]
-    index_random = random.randint(0, len(solution) -1)
-    neighbor_solution[index_random] = int(not neighbor_solution[index_random])
-    print("s ", solution)
-    print("ns",neighbor_solution)
-    return neighbor_solution
-
-if __name__ == "__main__":
-    main()
+    neighbor = solution[:]
+    idx = random.randint(0, len(neighbor) - 1)
+    neighbor[idx] = 1 - neighbor[idx] # flip 0 pra 1 ou 1 pra 0
+    return neighbor
